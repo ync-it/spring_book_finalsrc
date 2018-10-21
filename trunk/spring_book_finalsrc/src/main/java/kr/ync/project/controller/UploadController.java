@@ -118,7 +118,7 @@ public class UploadController {
 
 			if (mType != null) { // 이미지일 경우
 				headers.setContentType(mType);
-			} else { // 일반 파일이면 다운로드 박게 한다.
+			} else { // 일반 파일이면 다운로드 받게 한다.
 				fileName = fileName.substring(fileName.indexOf("_") + 1);
 				headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
 				headers.add("Content-Disposition",

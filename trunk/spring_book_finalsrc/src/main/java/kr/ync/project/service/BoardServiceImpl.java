@@ -32,7 +32,7 @@ public class BoardServiceImpl implements BoardService {
 		dao.create(board);
 
 		String[] files = board.getFiles();
-		
+		log.info("serviec.........." + board.toString());
 		if (files == null) {
 			log.info("upload된 파일이 존재하지 않습니다.");
 			return;
