@@ -14,6 +14,11 @@
 }
 </style>
 
+<div class='popup back' style="display:none;"></div>
+<div id="popup_front" class='popup front' style="display:none;">
+<img id="popup_img">
+</div>
+
 <!-- Main content -->
 <section class="content">
 	<div class="row">
@@ -141,8 +146,42 @@ $("#registerForm").submit(function(event){
 	that.get(0).submit();
 });
 
+$(".uploadedList").on("click", ".mailbox-attachment-info a", function(event){
+	var fileLink = $(this).attr("href");
+	
+	if(checkImageType(fileLink)){
+		event.preventDefault();
+		
+		var imgTag = $("#popup_img");
+		
+		imgTag.attr("src", fileLink);
+		console.log(imgTag.attr("src"));
+		
+		$(".popup").show('slow');
+		imgTag.addClass("show");		
+	}	
+});
 
+$("#popup_img").on("click", function(){
+	$(".popup").hide('slow');
+});	
 
+$(".uploadedList").on("click", ".delbtn a", function(event){
+	
+	var that = $(this);
+	
+   $.ajax({
+	   url:"deleteFile",
+	   type:"post",
+	   data: {fileName:$(this).attr("href")},
+	   dataType:"text",
+	   success:function(result){
+		   if(result == 'deleted'){
+			   that.parent("div").remove();
+		   }
+	   }
+   });
+});
 </script>
 
 <%@include file="../include/footer.jsp"%>
