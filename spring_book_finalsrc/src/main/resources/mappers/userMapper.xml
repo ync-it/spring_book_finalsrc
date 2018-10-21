@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.ync.project.mapper.UserMapper">
+
+	<select id="login" resultType="UserVO">
+		SELECT	uids,
+				upw,
+				uname
+		FROM	tbl_user
+		WHERE	uids = #{uids}
+		AND		upw = #{upw}
+	</select>
+  
+	<update id="keepLogin" >
+		UPDATE tbl_user SET 	sessionKey = #{sessionId},
+	  							sessionLimit = #{next}
+		WHERE uids = #{uids}
+	</update>
+
+	<select id="checkUserWithSessionKey" resultType="UserVO">
+		SELECT 	*
+		FROM	tbl_user
+		WHERE	sessionKey = #{value}
+		AND		sessionlimit> SYSDATE
+	</select>	
+
+</mapper>
+
+

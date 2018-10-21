@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/mvc"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<!-- DispatcherServlet Context: defines this servlet's request-processing infrastructure -->
+	
+	<!-- Enables the Spring MVC @Controller programming model -->
+	<annotation-driven />
+
+	<!-- Handles HTTP GET requests for /resources/** by efficiently serving up static resources in the ${webappRoot}/resources directory -->
+	<resources mapping="/resources/**" location="/resources/" />
+
+	<!-- Resolves views selected for rendering by @Controllers to .jsp resources in the /WEB-INF/views directory -->
+	<beans:bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<beans:property name="prefix" value="/WEB-INF/views/" />
+		<beans:property name="suffix" value=".jsp" />
+	</beans:bean>
+	
+	<context:component-scan base-package="kr.ync.project.controller" />
+	
+	<!-- multipartResolver upload file size를 MAX 10M로 설정 -->
+	<beans:bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<beans:property name="maxUploadSize" value="10485760"></beans:property>
+	</beans:bean>
+	
+	<!-- upload되는 file의 실제 저장 경로 설정. 개인별로 폴더 생성 후 경로를 지정해야함!!!
+	constructor-arg 속성으로 매개변수 혹은 value로 해당 bean을 넘겨준다.
+	지금은 local(PC)이지만 프로젝트 수행 시에는 Server에서 동작되기에 해당 경로도
+	Server의 경로로 지정해야 한다.
+	Server경로는 각 팀별로 /home/team_a/upload 이렇게 셋팅한다.
+	-->
+	<beans:bean id="uploadPath" class="java.lang.String">
+		<beans:constructor-arg value="/home/hanize2/upload">
+		</beans:constructor-arg>
+	</beans:bean>
+	
+	<!--
+	local PC의 경로. upload test시에는 아래와 같이 local 경로로 test하고
+	test 완료 후 정상 동작되면 server의 경로로 변경하여 SVN에 반영시켜야 한다.
+	-->
+	<!-- <beans:bean id="uploadPath" class="java.lang.String">
+		<beans:constructor-arg value="G:\\ync2\\Spring\\2018\\upload">
+		</beans:constructor-arg>
+	</beans:bean> -->
+	
+	<!-- interceptor 관련 설정 -->
+ 	<beans:bean id="authInterceptor" class="kr.ync.project.interceptor.AuthInterceptor"></beans:bean>
+	<beans:bean id="loginInterceptor" class="kr.ync.project.interceptor.LoginInterceptor"></beans:bean>
+
+	<interceptors>
+		<interceptor>
+			<mapping path="/user/loginPost" />
+			<beans:ref bean="loginInterceptor" />
+		</interceptor>
+	  
+		<interceptor>
+			<mapping path="/sboard/register"/>
+			<mapping path="/sboard/modifyPage"/>
+			<mapping path="/sboard/removePage"/>
+			<beans:ref bean="authInterceptor"/>
+		</interceptor>
+	</interceptors>
+	
+</beans:beans>

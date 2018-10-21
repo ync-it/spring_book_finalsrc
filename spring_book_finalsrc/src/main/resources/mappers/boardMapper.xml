@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.ync.project.mapper.BoardMapper">
+
+<insert id="create">
+	INSERT INTO tbl_board (bno, title, content, writer) 
+	VALUES(SEQ_BOARD.NEXTVAL, #{title},#{content}, #{writer})
+</insert>
+
+<select id="read" resultType="BoardVO">
+	SELECT  bno,
+	 		title,
+	 		content,
+	 		writer,
+	 		regdate,
+	 		viewcnt,
+	 		replycnt
+	FROM 	tbl_board 
+	WHERE	bno = #{bno}
+</select>
+
+<update id="update">
+	UPDATE tbl_board	SET title =#{title},
+						content =#{content},
+						writer =#{writer}
+	WHERE bno = #{bno}
+</update>
+
+<!-- 댓글 count update -->
+<update id="updateReplyCnt">
+	UPDATE	tbl_board SET replycnt = replycnt + #{amount}
+	WHERE	bno = #{bno} 
+</update>
+
+<!-- 게시글 view count update -->
+<update id="updateViewCnt">
+	UPDATE	tbl_board SET viewcnt = viewcnt +1
+	WHERE	bno = #{bno}
+</update>
+
+<delete id="delete">
+	delete from tbl_board where bno = #{bno}
+</delete>
+
+<select id="listAll" resultType="BoardVO">
+	<![CDATA[
+	SELECT 	bno,
+			title,
+			content,
+			writer,
+			regdate,
+			viewcnt,
+			replycnt
+	FROM tbl_board 
+	WHERE bno > 0 
+	ORDER BY bno DESC, regdate DESC
+	]]>  
+</select>
+ 
+
+<select id="listPage"  resultType="BoardVO">
+	<![CDATA[
+	SELECT	bno,
+			title,
+			content,
+			writer,
+			viewcnt,
+			regdate,
+			replycnt
+	FROM   (SELECT 	/*+INDEX_DESC(tbl_board pk_board)*/
+					rownum rn,
+					bno,
+					title,
+					content,
+					writer,
+					viewcnt,
+					regdate,
+					replycnt
+	  		FROM	tbl_board
+			WHERE	rownum <= #{page} * #{perPageNum}
+			AND		bno > 0
+			)
+	WHERE 	rn > (#{page} -1) * #{perPageNum}
+	]]>
+</select>
+
+<select id="listCriteria" resultType="BoardVO">
+	<![CDATA[
+	SELECT	bno,
+			title,
+			content,
+			writer,
+			viewcnt,
+			regdate,
+			replycnt
+	FROM   (SELECT 	/*+INDEX_DESC(tbl_board pk_board)*/
+					rownum rn,
+					bno,
+					title,
+					content,
+					writer,
+					viewcnt,
+					regdate,
+					replycnt
+	  		FROM	tbl_board
+			WHERE	rownum <= #{page} * #{perPageNum}
+			AND		bno > 0
+			)
+	WHERE 	rn > (#{page} -1) * #{perPageNum}
+	]]>
+</select>
+
+<select id="countPaging" resultType="int">
+	<![CDATA[
+	SELECT	count(bno) 
+	FROM	tbl_board 
+	WHERE	bno > 0 
+	]]>
+</select>
+
+<!-- 분리되기 전 listSearch 쿼리 시작 -->
+<select id="listSearch_old"  resultType="BoardVO">
+	<![CDATA[
+		SELECT	bno,
+				title,
+				content,
+				writer,
+				viewcnt,
+				regdate
+		FROM   (SELECT 	/*+INDEX_DESC(tbl_board pk_board)*/
+						rownum rn,
+						bno,
+						title,
+						content,
+						writer,
+						viewcnt,
+						regdate
+		  		FROM	tbl_board
+	]]>
+		<!--
+		<where> 엘리먼트로 검색을 하지 않았을 경우 AND rownum <= 과 같이 WHERE 구문이 빠져버린다.
+		따라서 <where> 를 사용하면 AND나 OR로 구문이 시작되면 AND나 OR를 지워버린다.
+		아래 구문과 동일한 기능. 
+		<trim prefix="WHERE" prefixOverrides="AND|OR ">
+		  ... 
+		</trim>
+		http://www.mybatis.org/mybatis-3/ko/dynamic-sql.html 참고
+		-->
+		<where>
+				
+				<if test="searchType != null" >
+					<if test="searchType == 't'.toString()">
+						AND title LIKE '%'|| #{keyword}||'%'
+					</if>
+					<if test="searchType == 'c'.toString()">
+						AND content LIKE '%'|| #{keyword}||'%'
+					</if>
+					<if test="searchType == 'w'.toString()">
+						AND writer LIKE '%'|| #{keyword}||'%'
+					</if>    
+					<if test="searchType == 'tc'.toString()">
+						AND (title LIKE '%'|| #{keyword}||'%' OR content LIKE '%'|| #{keyword}||'%')
+					</if>      
+				</if>
+
+				<![CDATA[
+				AND rownum <= #{page} * #{perPageNum}
+				AND bno > 0
+		  		)
+				]]>
+		</where>
+	<![CDATA[
+		WHERE rn > (#{page} -1) * #{perPageNum}
+	]]>
+</select>
+
+<!-- 동적SQL (<sql>로 분리) 작성된 최종 SQL 시작-->
+<sql id="search">
+	<if test="searchType != null" >
+		<if test="searchType == 't'.toString()">
+			AND title LIKE '%'|| #{keyword}||'%'
+		</if>
+		<if test="searchType == 'c'.toString()">
+			AND content LIKE '%'|| #{keyword}||'%'
+		</if>
+		<if test="searchType == 'w'.toString()">
+			AND writer LIKE '%'|| #{keyword}||'%'
+		</if>    
+		<if test="searchType == 'tc'.toString()">
+			AND (title LIKE '%'|| #{keyword}||'%' OR content LIKE '%'|| #{keyword}||'%')
+		</if>      
+	</if>
+</sql>
+
+<select id="listSearch"  resultType="BoardVO">
+	<![CDATA[
+		SELECT	bno,
+				title,
+				content,
+				writer,
+				viewcnt,
+				regdate,
+				replycnt
+		FROM   (SELECT 	/*+INDEX_DESC(tbl_board pk_board)*/
+						rownum rn,
+						bno,
+						title,
+						content,
+						writer,
+						viewcnt,
+						regdate,
+						replycnt
+		  		FROM	tbl_board
+	]]>
+		<!--
+		<where> 엘리먼트로 검색을 하지 않았을 경우 AND rownum <= 과 같이 WHERE 구문이 빠져버린다.
+		따라서 <where> 를 사용하면 AND나 OR로 구문이 시작되면 AND나 OR를 지워버린다.
+		아래 구문과 동일한 기능. 
+		<trim prefix="WHERE" prefixOverrides="AND|OR ">
+		  ... 
+		</trim>
+		http://www.mybatis.org/mybatis-3/ko/dynamic-sql.html 참고
+		-->
+		<where>
+				<include refid="search"></include>
+				<![CDATA[
+				AND rownum <= #{page} * #{perPageNum}
+				AND bno > 0
+		  		)
+				]]>
+		</where>
+	<![CDATA[
+		WHERE rn > (#{page} -1) * #{perPageNum}
+	]]>
+</select>
+
+<select id="listSearchCount"  resultType="int">
+	<![CDATA[
+		SELECT	count(bno)
+		FROM	tbl_board
+	]]>
+	
+	<where>
+		<include refid="search"></include>
+		<![CDATA[
+			AND bno > 0
+		]]>
+	</where>
+</select>
+<!-- 동적SQL (<sql>로 분리) 작성된 최종 SQL 끝-->
+
+<!-- 첨부파일 관련 SQL -->
+<insert id="addAttach">
+	INSERT INTO tbl_attach(fullname, bno) VALUES (#{fullName}, SEQ_BOARD.CURRVAL)
+</insert> 
+
+
+<select id="getAttach" resultType="string">
+	SELECT	fullname
+	FROM	tbl_attach
+	WHERE 	bno = #{bno}
+	ORDER BY regdate
+</select> 
+
+ 
+<delete id="deleteAttach">
+	DELETE FROM tbl_attach WHERE bno = #{bno}
+</delete>
+
+<insert id="replaceAttach">
+	INSERT INTO tbl_attach(fullname, bno) VALUES (#{fullName}, #{bno})
+</insert>
+</mapper>
