@@ -4,6 +4,10 @@
 <%@include file="../include/header.jsp"%>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.12/handlebars.min.js"></script>
 <script src="/resources/js/upload.js"></script>
+<script>
+//js에서 로그인 여부를 체크하기 위한 global 변수
+var loginNow=true;
+</script>
 <style type="text/css">
     .popup {position: absolute;}
     .back { background-color: gray; opacity:0.5; width: 100%; height: 300%; overflow:hidden;  z-index:1101;}
@@ -162,6 +166,13 @@
 	
 </section>
 <!-- /.content -->
+
+<c:if test="${empty login}">
+<script>
+// js에서 로그인 여부를 체크하기 위한 global 변수
+loginNow=false;
+</script>
+</c:if>
 
 <!-- Drag & Drop 첨부파일용 handlebars template -->
 <script id="templateAttach" type="text/x-handlebars-template">
@@ -328,7 +339,10 @@
                         alert("등록 되었습니다.");
                         replyPage = 1; // 댓글 등록 후 댓글 1 페이지부터 호출한다.
                         getPage("/replies/"+bno+"/"+replyPage );
-                        replyerObj.val("");  // 댓글 쓰기 입력 text box의 글들을 제거
+                        // 로그인 상태이면 댓글 작성자는 해당 id로 그대로 둔다.
+						if(!loginNow) {
+                        	replyerObj.val("");
+						}
                         replytextObj.val("");
                     //}
             	},
@@ -420,9 +434,13 @@ $(document).ready(function(){
 		formObj.submit();
 	});
 	
-	$("#removeBtn").on("click", function(){
-		var replyCnt =  $("#replycntSmall").html();
-		
+	$("#removeBtn").on("click", function(event){
+		if(!confirm("해당 게시물을 삭제하시겠습니까?")) {
+			return;
+		}
+		// 댓글 숫자는 [5] 이렇게 text로 되어 있기에 []를 제거해준다.
+		var replyCnt =  $("#replycntSmall").text().replace(/\[|\]/g,"");
+
 		if(replyCnt > 0 ){
 			alert("댓글이 달린 게시물을 삭제할 수 없습니다.");
 			return;
